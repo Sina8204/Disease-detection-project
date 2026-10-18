@@ -1,4 +1,4 @@
-import os , json , joblib
+import random , os , json , joblib
 import numpy as np
 from src.pathes import *
 from typing import List, Any , Optional
@@ -136,7 +136,6 @@ class Disease_diagnosis:
                 return json.load(file)
         else :
             return None
-import random
 
 def shuffle_list(input_list):
     # ایجاد یک کپی برای جلوگیری از تغییر لیست اصلی
