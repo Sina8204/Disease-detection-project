@@ -4,5 +4,17 @@
     "dataset" : "Model_assets/Diabet_type2/pima-diabetes-diagnostic-dataset_en.csv",
     "features" : ["Pregnancies", "Glucose", "BloodPressure", 
                 "SkinThickness", "Insulin", "BMI", 
-                "DiabetesPedigreeFunction", "Age"]
+                "DiabetesPedigreeFunction", "Age"] ,
+    "terget" : [
+        {
+            "value" : 0 ,
+            "msg" : "The person has not diabet type2" ,
+            "output" : false
+        } ,
+        {
+            "value" : 1 ,
+            "msg" : "The person has diabet type2" ,
+            "output" : true
+        }
+    ]
 }

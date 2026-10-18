@@ -11,5 +11,17 @@
                 "symmetry2", "fractal_dimension2", "radius3", 
                 "texture3", "perimeter3", "area3", 
                 "smoothness3", "compactness3", "concavity3", 
-                "concave_points3", "symmetry3", "fractal_dimension3"]
+                "concave_points3", "symmetry3", "fractal_dimension3"] ,
+    "terget" : [
+        {
+            "value" : 0 ,
+            "msg" : "The person has not breast cancer" ,
+            "output" : false
+        } ,
+        {
+            "value" : 1 ,
+            "msg" : "The person has breast cancer" ,
+            "output" : true
+        }
+    ]
 }
