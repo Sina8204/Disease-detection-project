@@ -1,0 +1,21 @@
+{
+    "model" : "Model_assets/Heart_disease/best_heart_disease_model.pkl",
+    "scaler" : "Model_assets/Heart_disease/heart_disease_scaler.pkl",
+    "dataset" : "Model_assets/Heart_disease/heart_disease.csv",
+    "features" : ["age", "sex", "cp", 
+                "trestbps", "chol", "fbs", 
+                "restecg", "thalach", "exang", 
+                "oldpeak", "slope", "ca", "thal"] ,
+    "terget" : [
+        {
+            "value" : 0 ,
+            "msg" : "The person has not heart disease" ,
+            "output" : false
+        } ,
+        {
+            "value" : 1 ,
+            "msg" : "The person has heart disease" ,
+            "output" : true
+        }
+    ]
+}

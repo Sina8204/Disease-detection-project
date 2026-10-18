@@ -1,0 +1,8 @@
+{
+    "model" : "Model_assets/Diabet_type2/best_diabete_model.pkl",
+    "scaler" : "Model_assets/Diabet_type2/diabete_scaler.pkl",
+    "dataset" : "Model_assets/Diabet_type2/pima-diabetes-diagnostic-dataset_en.csv",
+    "features" : ["Pregnancies", "Glucose", "BloodPressure", 
+                "SkinThickness", "Insulin", "BMI", 
+                "DiabetesPedigreeFunction", "Age"]
+}
