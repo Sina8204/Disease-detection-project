@@ -123,10 +123,29 @@ class Disease_diagnosis:
             results = model_details["terget"] ,
             result = screening
         )
+
+    def __check_required_keys(self , requirements , keys):
+        for required_key in requirements:
+            if not required_key in keys:
+                return required_key
+        return True
     
     def multiple_screening(self , *multi_data):
+        required_keys = ["__name__" , "disease_name" , "patients_data"]
         results = {}
         for data in multi_data:
+            req_keys = self.__check_required_keys(requirements = required_keys , keys = list(data.keys()))
+            if req_keys != True and isinstance(req_keys , str):
+                patient_name = f"Person{multi_data.index(data)}" if req_keys == "__name__" else data["__name__"]
+                results.update({
+                    self.__Create_unique_name(patient_name , results) : {
+                        "disease_name" : None if req_keys == "disease_name" else data["disease_name"],
+                        "result" : None ,
+                        "msg" : f"This data does not have the field '{req_keys}' => '{data}'!!" ,
+                        "result_value" : None
+                        }
+                    })
+                continue
             try :
                 screening_result = self.Screening(data["disease_name"] , **data["patients_data"])
                 results.update({
@@ -354,9 +373,9 @@ def test_model_heart_disease():
         "tricky_healthy (سالم)":          tricky_healthy,
     }
     sample_data = [
-        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : patient_1} ,
-        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : healthy_1} ,
-        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : high_risk_patient} ,
+        {"disease_name" : 'Heart disease' , "patients_data" : patient_1} ,
+        {"__name__" : "Ali", "patients_data" : healthy_1} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease'} ,
         {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : young_healthy} ,
         {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : high_chol_patient} ,
         {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : female_patient} ,
