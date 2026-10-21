@@ -164,6 +164,7 @@ class Disease_diagnosis:
                     "msg" : str(e) ,
                     "result_value" : None
                 })
+        return results
 
     def show_result(self):
         print(target["msg"])
