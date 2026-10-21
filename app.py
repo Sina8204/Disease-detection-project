@@ -3,9 +3,9 @@ from Disease_diagnosis_class import Disease_diagnosis as dd
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox , 
-                            QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QComboBox)
+                            QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QComboBox , QScrollArea)
 from gui.styles import STYLESHEET
-from gui.customized_widgets import multi_tab
+from gui.customized_widgets import multi_tab , FilePicker
 
 class tabs_page(QWidget):
     def __init__(self, parent = None):
@@ -30,6 +30,13 @@ class tabs_page(QWidget):
         top_lay.addWidget(self.refresh_btn)
         root.addWidget(top)
 
+        # --- فرم ویژگی‌ها
+        self.features_group = QGroupBox("ویژگی‌های ورودی بیمار")
+        group_lay = QVBoxLayout(self.features_group)
+        file_picker = FilePicker()
+        group_lay.addWidget(file_picker)
+        root.addWidget(self.features_group, 1)
+        
         self.refresh_models()
 
     def refresh_models(self):
