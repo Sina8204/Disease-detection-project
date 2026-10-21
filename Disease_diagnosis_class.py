@@ -130,7 +130,7 @@ class Disease_diagnosis:
             try :
                 screening_result = self.Screening(data["disease_name"] , **data["patients_data"])
                 results.update({
-                    data["__name__"] : {
+                    self.__Create_unique_name(data["__name__"] , results) : {
                         "disease_name" : data["disease_name"] ,
                         "result" : screening_result[0] ,
                         "msg" : screening_result[1]["msg"] ,
@@ -175,6 +175,15 @@ class Disease_diagnosis:
                     }
                 })
         return results
+
+    def __Create_unique_name(self , name , dic):
+        counter = 1
+        uniq_name = name
+        while(uniq_name in list(dic.keys())):
+            counter += 1
+            uniq_name = f"{name}({counter})"
+        return uniq_name
+
 
     def show_result(self , msg):
         print(msg)
@@ -346,13 +355,13 @@ def test_model_heart_disease():
     }
     sample_data = [
         {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : patient_1} ,
-        {"__name__" : "Naghi" , "disease_name" : 'Heart disease' , "patients_data" : healthy_1} ,
-        {"__name__" : "Taghi" , "disease_name" : 'Heart disease' , "patients_data" : high_risk_patient} ,
-        {"__name__" : "Hassan" , "disease_name" : 'Heart disease' , "patients_data" : young_healthy} ,
-        {"__name__" : "Hussein" , "disease_name" : 'Heart disease' , "patients_data" : high_chol_patient} ,
-        {"__name__" : "Bagher" , "disease_name" : 'Heart disease' , "patients_data" : female_patient} ,
-        {"__name__" : "BiBi" , "disease_name" : 'Heart disease' , "patients_data" : midage_patient} ,
-        {"__name__" : "DJ" , "disease_name" : 'Heart disease' , "patients_data" : tricky_healthy}
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : healthy_1} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : high_risk_patient} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : young_healthy} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : high_chol_patient} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : female_patient} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : midage_patient} ,
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : tricky_healthy}
     ]
     
     result = t.multiple_screening(*sample_data)
