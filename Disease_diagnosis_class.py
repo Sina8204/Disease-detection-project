@@ -128,51 +128,61 @@ class Disease_diagnosis:
         results = {}
         for data in multi_data:
             try :
-                screening_result = self.Screening(data["disease_name"] , data["patients_data"])
+                screening_result = self.Screening(data["disease_name"] , **data["patients_data"])
                 results.update({
-                    "disease_name" : data["disease_name"] ,
-                    "result" : screening_result[0] ,
-                    "msg" : screening_result[1]["msg"] ,
-                    "result_value" : screening_result[1]["value"]
-                })
+                    data["__name__"] : {
+                        "disease_name" : data["disease_name"] ,
+                        "result" : screening_result[0] ,
+                        "msg" : screening_result[1]["msg"] ,
+                        "result_value" : screening_result[1]["value"]
+                        }
+                    })
             except ValueError as v :
                 results.update({
-                    "disease_name" : data["disease_name"] ,
-                    "result" : "Feature Error" ,
-                    "msg" : f"There was a problem retrieving some features. {v}" ,
-                    "result_value" : None
-                })
+                    data["__name__"] : {
+                        "disease_name" : data["disease_name"] ,
+                        "result" : "Feature Error" ,
+                        "msg" : f"There was a problem retrieving some features. {v}" ,
+                        "result_value" : None
+                        }
+                    })
             except NameError as n :
                 name = data["disease_name"]
                 results.update({
-                    "disease_name" : name ,
-                    "result" : "Disease_name Error" ,
-                    "msg" : f"{name} is not supported.\n{n}" ,
-                    "result_value" : None
+                    data["__name__"] : {
+                        "disease_name" : name ,
+                        "result" : "Disease_name Error" ,
+                        "msg" : f"{name} is not supported.\n{n}" ,
+                        "result_value" : None
+                    }
                 })
             except RuntimeError as r:
                 results.update({
-                    "disease_name" : data["disease_name"] ,
-                    "result" : None ,
-                    "msg" : str(r) ,
-                    "result_value" : None
+                        data["__name__"] : {
+                        "disease_name" : data["disease_name"] ,
+                        "result" : None ,
+                        "msg" : str(r) ,
+                        "result_value" : None
+                    }
                 })
             except Exception as e:
                 results.update({
-                    "disease_name" : data["disease_name"] ,
-                    "result" : "Unknown error" ,
-                    "msg" : str(e) ,
-                    "result_value" : None
+                    data["__name__"] : {
+                        "disease_name" : data["disease_name"] ,
+                        "result" : "Unknown error" ,
+                        "msg" : str(e) ,
+                        "result_value" : None
+                    }
                 })
         return results
 
-    def show_result(self):
-        print(target["msg"])
+    def show_result(self , msg):
+        print(msg)
     
     def __show_result(self , results , result):
         for target in results:
             if result[0] != target["value"] : continue
-            self.show_result()
+            self.show_result(target["msg"])
             return [target["output"] , target]
         raise RuntimeError(f"The model has made an unexpected prediction : '{result}'")
     
@@ -334,17 +344,30 @@ def test_model_heart_disease():
         "midage_patient (بیمار)":         midage_patient,
         "tricky_healthy (سالم)":          tricky_healthy,
     }
+    sample_data = [
+        {"__name__" : "Ali" , "disease_name" : 'Heart disease' , "patients_data" : patient_1} ,
+        {"__name__" : "Naghi" , "disease_name" : 'Heart disease' , "patients_data" : healthy_1} ,
+        {"__name__" : "Taghi" , "disease_name" : 'Heart disease' , "patients_data" : high_risk_patient} ,
+        {"__name__" : "Hassan" , "disease_name" : 'Heart disease' , "patients_data" : young_healthy} ,
+        {"__name__" : "Hussein" , "disease_name" : 'Heart disease' , "patients_data" : high_chol_patient} ,
+        {"__name__" : "Bagher" , "disease_name" : 'Heart disease' , "patients_data" : female_patient} ,
+        {"__name__" : "BiBi" , "disease_name" : 'Heart disease' , "patients_data" : midage_patient} ,
+        {"__name__" : "DJ" , "disease_name" : 'Heart disease' , "patients_data" : tricky_healthy}
+    ]
+    
+    result = t.multiple_screening(*sample_data)
+    print(json.dumps(result , ensure_ascii=False , indent=3))
 
-    for name, data in test_cases.items():
-        print(f"\n{'='*50}")
-        print(f"تست: {name}")
-        try:
-            result = t.Screening(disease_name='Heart disease', **data)
-            print(f"خروجی مدل: {result}")
-        except Exception as e:
-            print(f"خطا: {e}")
-        finally:
-            print(f"{'='*50}\n")
+    # for name, data in test_cases.items():
+    #     print(f"\n{'='*50}")
+    #     print(f"تست: {name}")
+    #     try:
+    #         result = t.Screening(disease_name='Heart disease', **data)
+    #         print(f"خروجی مدل: {result}")
+    #     except Exception as e:
+    #         print(f"خطا: {e}")
+    #     finally:
+    #         print(f"{'='*50}\n")
 
 def test_model_breast_cancer():
     malignant_1 = {
@@ -685,7 +708,7 @@ def test_model_diabet_type2():
             print(f"{'='*60}")
 
 if __name__ == "__main__":
-    test_model_diabet_type2()
+    test_model_heart_disease()
     # print(t.models)
     # data = shuffle_list(["age", "sex", "cp", 
     #             "trestbps", "chol", "fbs", 
