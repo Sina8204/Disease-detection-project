@@ -123,13 +123,58 @@ class Disease_diagnosis:
             results = model_details["terget"] ,
             result = screening
         )
+    
+    def multiple_screening(self , *multi_data):
+        results = {}
+        for data in multi_data:
+            try :
+                screening_result = self.Screening(data["disease_name"] , data["patients_data"])
+                results.update({
+                    "disease_name" : data["disease_name"] ,
+                    "result" : screening_result[0] ,
+                    "msg" : screening_result[1]["msg"] ,
+                    "result_value" : screening_result[1]["value"]
+                })
+            except ValueError as v :
+                results.update({
+                    "disease_name" : data["disease_name"] ,
+                    "result" : "Feature Error" ,
+                    "msg" : f"There was a problem retrieving some features. {v}" ,
+                    "result_value" : None
+                })
+            except NameError as n :
+                name = data["disease_name"]
+                results.update({
+                    "disease_name" : name ,
+                    "result" : "Disease_name Error" ,
+                    "msg" : f"{name} is not supported.\n{n}" ,
+                    "result_value" : None
+                })
+            except RuntimeError as r:
+                results.update({
+                    "disease_name" : data["disease_name"] ,
+                    "result" : None ,
+                    "msg" : str(r) ,
+                    "result_value" : None
+                })
+            except Exception as e:
+                results.update({
+                    "disease_name" : data["disease_name"] ,
+                    "result" : "Unknown error" ,
+                    "msg" : str(e) ,
+                    "result_value" : None
+                })
 
+    def show_result(self):
+        print(target["msg"])
+    
     def __show_result(self , results , result):
         for target in results:
             if result[0] != target["value"] : continue
-            print(target["msg"])
-            return target["output"]
+            self.show_result()
+            return [target["output"] , target]
         raise RuntimeError(f"The model has made an unexpected prediction : '{result}'")
+    
     def __open_models_json(self , model_name):
         if model_name in list(self.current_models.keys()):
             with open(self.current_models[model_name] , "r" , encoding = "utf-8") as file:
