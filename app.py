@@ -3,9 +3,10 @@ from Disease_diagnosis_class import Disease_diagnosis as dd
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox , 
-                            QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QComboBox , QScrollArea)
+                            QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QScrollArea)
 from gui.styles import STYLESHEET
-from gui.customized_widgets import multi_tab , FilePicker
+from gui.customized_widgets import multi_tab , FilePicker , ScrollBox
+
 
 class tabs_page(QWidget):
     def __init__(self, parent = None):
@@ -14,48 +15,32 @@ class tabs_page(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 16, 16, 16)
         root.setSpacing(12)
-        # --- Select disease
-        top = QGroupBox("انتخاب بیماری")
-        top_lay = QHBoxLayout(top)
-        top_lay.addWidget(QLabel("مدل تشخیصی:"))
-        self.disease_combo = QComboBox()
-        self.disease_combo.setMinimumWidth(280)
-        self.disease_combo.currentTextChanged.connect(self._load_features)
-        top_lay.addWidget(self.disease_combo)
-        top_lay.addStretch()
 
-        self.refresh_btn = QPushButton("بارگذاری مدل‌ها")
-        self.refresh_btn.setObjectName("secondary")
-        self.refresh_btn.clicked.connect(self.refresh_models)
-        top_lay.addWidget(self.refresh_btn)
-        root.addWidget(top)
-
-        # --- فرم ویژگی‌ها
-        self.features_group = QGroupBox("ویژگی‌های ورودی بیمار")
-        group_lay = QVBoxLayout(self.features_group)
-        file_picker = FilePicker()
-        group_lay.addWidget(file_picker)
-        root.addWidget(self.features_group, 1)
+        self.scroll_group = QGroupBox("اطلاعات فرد/افراد")
+        scroll_group_lay = QVBoxLayout(self.scroll_group)
+        scroller = ScrollBox()
+        scroll_group_lay.addWidget(scroller)
+        root.addWidget(self.scroll_group, 1)
         
-        self.refresh_models()
+        # self.refresh_models()
 
-    def refresh_models(self):
-        self.disease_combo.blockSignals(True)
-        self.disease_combo.clear()
-        try:
-            models = list(self.disease_dia.current_models.keys())
-            print(models)
-        except Exception as e:
-            QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
-            models = []
-        self.disease_combo.addItems(models)
-        self.disease_combo.blockSignals(False)
-        if models:
-            self.disease_combo.setCurrentIndex(0)
-            self._load_features(models[0])
+    # def refresh_models(self):
+    #     self.disease_combo.blockSignals(True)
+    #     self.disease_combo.clear()
+    #     try:
+    #         models = list(self.disease_dia.current_models.keys())
+    #         print(models)
+    #     except Exception as e:
+    #         QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
+    #         models = []
+    #     self.disease_combo.addItems(models)
+    #     self.disease_combo.blockSignals(False)
+    #     if models:
+    #         self.disease_combo.setCurrentIndex(0)
+    #         self._load_features(models[0])
     
-    def _load_features(self, disease_name: str):
-        print(f"Changed to {disease_name}")
+    # def _load_features(self, disease_name: str):
+    #     print(f"Changed to {disease_name}")
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
