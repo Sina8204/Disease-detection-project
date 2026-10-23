@@ -1,3 +1,4 @@
+import json , traceback
 import pandas as pd
 import numpy as np
 from PyQt5.QtWidgets import (QTabWidget, QWidget , QScrollArea , 
@@ -6,8 +7,31 @@ from PyQt5.QtWidgets import (QTabWidget, QWidget , QScrollArea ,
                             QComboBox , QMessageBox , QTableWidget ,
                             QAbstractItemView , QHeaderView , QDialog ,
                             QTableWidgetItem , QSizePolicy)
-from PyQt5.QtCore import Qt , QEvent, QObject
+from PyQt5.QtCore import Qt , QEvent, QObject , pyqtSignal , QThread
 from PyQt5.QtGui import QColor, QBrush
+from Disease_diagnosis_class import Disease_diagnosis as dd
+
+prediction_engine = dd()
+
+# ------------------------------------------------------------------
+# Worker برای اجرای Screening در پس‌زمینه (مدل ممکن است کند باشد)
+# ------------------------------------------------------------------
+class ScreeningWorker(QThread):
+    finished_ok = pyqtSignal(object)
+    finished_err = pyqtSignal(str, str)  # (short_msg, full_traceback)
+
+    def __init__(self, disease_name: str, data: dict, parent=None):
+        super().__init__(parent)
+        self.disease_name = disease_name
+        self.data = data
+
+    def run(self):
+        try:
+            result = prediction_engine.Screening(self.disease_name, **self.data)
+            self.finished_ok.emit(result)
+        except Exception as e:
+            self.finished_err.emit(str(e), traceback.format_exc())
+
 class multi_tab(QTabWidget):
     def __init__(self):
         super().__init__()
@@ -238,7 +262,12 @@ class persons_profile(QWidget):
         lay.addWidget(QLabel("مدل تشخیصی:"))
         self.disease_combo = QComboBox()
         self.disease_combo.setMinimumWidth(280)
+        self.disease_combo_update_items()
+        self.disease_combo.currentTextChanged.connect(self.load_new_columns)
         lay.addWidget(self.disease_combo)
+        self.btn_screening = QPushButton("Screening")
+        self.btn_screening.clicked.connect(self.Disease_prediction)
+        lay.addWidget(self.btn_screening)
         lay.addStretch()
         self.btn_info = QPushButton("اطلاعات فرد")
         self.btn_info.setObjectName("secondary")
@@ -248,6 +277,10 @@ class persons_profile(QWidget):
         main_lay.addWidget(self.widget_group)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
+    def load_new_columns(self , name):
+        print(prediction_engine.model_columns(name))
+        # self.person_features.columns = prediction_engine.model_columns(name)
+    
     def open_person_profile(self):
         self.win_person_data = win_person_features(features = self.person_features , save_edited_data = self.save_edited_data , parent = self)
         self.win_person_data.show()
@@ -255,6 +288,41 @@ class persons_profile(QWidget):
     def save_edited_data(self):
         self.person_features = self.win_person_data()
         print(self.win_person_data())
+
+    @property
+    def disease_name(self):
+        return self.disease_combo.currentText()
+
+    @property
+    def person_features_values(self):
+        return self.person_features.to_dict(orient="records")[0]
+
+    @property
+    def models_name(self):
+        try :
+            models = prediction_engine.models
+            return list(models.keys())
+        except Exception as e:
+            QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
+            return []
+
+
+    def disease_combo_update_items(self):
+        models = self.models_name
+        self.disease_combo.blockSignals(True)
+        self.disease_combo.clear()
+        self.disease_combo.addItems(models)
+        self.disease_combo.blockSignals(False)
+        if models:
+            self.disease_combo.setCurrentIndex(0)
+
+    def Disease_prediction(self):
+        self.worker = ScreeningWorker(self.disease_name, self.person_features_values)
+        self.worker.finished_ok.connect(lambda result: print(result[1]))
+        self.worker.finished_err.connect(lambda short, full: print(f"{short} : {full}"))
+        self.worker.start()
+        
+
 class import_files(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -303,12 +371,22 @@ class ScrollBox(QWidget):
         self.scroll.viewport().installEventFilter(self.wheel_filter)
 
     def add_profile(self):
-        prof = persons_profile(pd.DataFrame({
-        "نام": ["علی", "سارا", "رضا", "مریم"],
-        "سن": [25, 32, 41, 28],
-        "قد": [175.5, 162.0, 180.2, 168.4],
-        "شهر": ["تهران", "شیراز", None, "اصفهان"],
-        }))
+        sample_data = {
+            "age": 63,
+            "sex": 1,
+            "cp": 4,
+            "trestbps": 130,
+            "chol": 254,
+            "fbs": 0,
+            "restecg": 2,
+            "thalach": 147,
+            "exang": 0,
+            "oldpeak": 1.4,
+            "slope": 2,
+            "ca": 1.0,
+            "thal": 7.0
+        }
+        prof = persons_profile(pd.DataFrame([list(sample_data.values())] , columns=list(sample_data.keys())))
         self.content_layout.insertWidget(self.content_layout.count() - 1, prof)
 
     def remove_profile(self, widget):
