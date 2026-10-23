@@ -5,8 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox , 
                             QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QScrollArea)
 from gui.styles import STYLESHEET
-from gui.customized_widgets import multi_tab , FilePicker , ScrollBox
-
+from gui.customized_widgets import multi_tab
+from gui.scroll_view import ScrollBox
 
 class tabs_page(QWidget):
     def __init__(self, parent = None):

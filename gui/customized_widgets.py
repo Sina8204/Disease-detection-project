@@ -1,13 +1,12 @@
 import json , traceback
 import pandas as pd
 import numpy as np
-from PyQt5.QtWidgets import (QTabWidget, QWidget , QScrollArea , 
-                            QPushButton , QLabel , QFileDialog ,
-                            QVBoxLayout, QHBoxLayout , QGroupBox ,
-                            QComboBox , QMessageBox , QTableWidget ,
-                            QAbstractItemView , QHeaderView , QDialog ,
-                            QTableWidgetItem , QSizePolicy)
-from PyQt5.QtCore import Qt , QEvent, QObject , pyqtSignal , QThread
+from PyQt5.QtWidgets import (QTabWidget, QWidget , QFileDialog ,
+                            QPushButton , QLabel , QDialog ,
+                            QVBoxLayout, QHBoxLayout , QHeaderView ,
+                            QMessageBox , QTableWidget , QAbstractItemView , 
+                            QTableWidgetItem)
+from PyQt5.QtCore import Qt , pyqtSignal , QThread
 from PyQt5.QtGui import QColor, QBrush
 from Disease_diagnosis_class import Disease_diagnosis as dd
 
@@ -239,90 +238,6 @@ class DataFrameTableWidget(QWidget):
         """It syncs the internal dataframe with the table's content."""
         self._df = self.get_dataframe()
 
-class win_person_features(QDialog):
-    def __init__(self, features : pd.DataFrame , save_edited_data , parent=None):
-        super().__init__(parent)
-        self.person_features = features
-        self.setWindowTitle("")
-        self.resize(500, 400)
-
-        self.person_data = DataFrameTableWidget(df = self.person_features , save_edited_data = save_edited_data)
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.person_data)
-    
-    def __call__(self, *args, **kwargs):
-        return self.person_data.get_dataframe()
-class persons_profile(QWidget):
-    def __init__(self, features : pd.DataFrame , parent=None):
-        super().__init__(parent)
-        self.person_features = features
-        self.widget_group = QGroupBox("انتخاب بیماری")
-        lay = QHBoxLayout(self.widget_group)
-        lay.addWidget(QLabel("مدل تشخیصی:"))
-        self.disease_combo = QComboBox()
-        self.disease_combo.setMinimumWidth(280)
-        self.disease_combo_update_items()
-        self.disease_combo.currentTextChanged.connect(self.load_new_columns)
-        lay.addWidget(self.disease_combo)
-        self.btn_screening = QPushButton("Screening")
-        self.btn_screening.clicked.connect(self.Disease_prediction)
-        lay.addWidget(self.btn_screening)
-        lay.addStretch()
-        self.btn_info = QPushButton("اطلاعات فرد")
-        self.btn_info.setObjectName("secondary")
-        self.btn_info.clicked.connect(self.open_person_profile)
-        lay.addWidget(self.btn_info)
-        main_lay = QVBoxLayout(self)
-        main_lay.addWidget(self.widget_group)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
-
-    def load_new_columns(self , name):
-        print(prediction_engine.model_columns(name))
-        # self.person_features.columns = prediction_engine.model_columns(name)
-    
-    def open_person_profile(self):
-        self.win_person_data = win_person_features(features = self.person_features , save_edited_data = self.save_edited_data , parent = self)
-        self.win_person_data.show()
-
-    def save_edited_data(self):
-        self.person_features = self.win_person_data()
-        print(self.win_person_data())
-
-    @property
-    def disease_name(self):
-        return self.disease_combo.currentText()
-
-    @property
-    def person_features_values(self):
-        return self.person_features.to_dict(orient="records")[0]
-
-    @property
-    def models_name(self):
-        try :
-            models = prediction_engine.models
-            return list(models.keys())
-        except Exception as e:
-            QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
-            return []
-
-
-    def disease_combo_update_items(self):
-        models = self.models_name
-        self.disease_combo.blockSignals(True)
-        self.disease_combo.clear()
-        self.disease_combo.addItems(models)
-        self.disease_combo.blockSignals(False)
-        if models:
-            self.disease_combo.setCurrentIndex(0)
-
-    def Disease_prediction(self):
-        self.worker = ScreeningWorker(self.disease_name, self.person_features_values)
-        self.worker.finished_ok.connect(lambda result: print(result[1]))
-        self.worker.finished_err.connect(lambda short, full: print(f"{short} : {full}"))
-        self.worker.start()
-        
-
 class import_files(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -334,72 +249,4 @@ class import_files(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.file_picker)
 
-class WheelFilter(QObject):
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Wheel:
-            event.ignore()
-            return False
-        return super().eventFilter(obj, event)
 
-class ScrollBox(QWidget):
-    def __init__(self , parent = None):
-        super().__init__(parent)
-        # --- Scroll view ---
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-
-        self.content_widget = QWidget()
-        self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.addStretch()
-        self.scroll.setWidget(self.content_widget)
-
-        # --- Buttons ---
-        top_bar = QHBoxLayout()
-        self.btn_new_profile = QPushButton("افزودن پروفایل جدید")
-        self.btn_add_by_file = QPushButton("افزودن از طریق فایل")
-        self.btn_new_profile.clicked.connect(self.add_profile)
-        self.btn_add_by_file.clicked.connect(self.open_win_import_files)
-        top_bar.addWidget(self.btn_new_profile)
-        top_bar.addWidget(self.btn_add_by_file)
-
-        main_layout = QVBoxLayout(self)
-        main_layout.addLayout(top_bar)
-        main_layout.addWidget(self.scroll)
-
-        # --- Scroll by mouse scroll ---
-        self.wheel_filter = WheelFilter(self)
-        self.scroll.viewport().installEventFilter(self.wheel_filter)
-
-    def add_profile(self):
-        sample_data = {
-            "age": 63,
-            "sex": 1,
-            "cp": 4,
-            "trestbps": 130,
-            "chol": 254,
-            "fbs": 0,
-            "restecg": 2,
-            "thalach": 147,
-            "exang": 0,
-            "oldpeak": 1.4,
-            "slope": 2,
-            "ca": 1.0,
-            "thal": 7.0
-        }
-        prof = persons_profile(pd.DataFrame([list(sample_data.values())] , columns=list(sample_data.keys())))
-        self.content_layout.insertWidget(self.content_layout.count() - 1, prof)
-
-    def remove_profile(self, widget):
-        self.content_layout.removeWidget(widget)
-        widget.deleteLater()
-
-    def open_win_import_files(self):
-        self.win_import_files = import_files(self)
-        self.win_import_files.show()
-    
-    def clear_all(self):
-        while self.content_layout.count():
-            item = self.content_layout.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.deleteLater()
