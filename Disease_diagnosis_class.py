@@ -213,6 +213,11 @@ class Disease_diagnosis:
             self.show_result(target["msg"])
             return [target["output"] , target]
         raise RuntimeError(f"The model has made an unexpected prediction : '{result}'")
+
+    def model_columns(self , name):
+        columns = self.__open_models_json(name)
+        if not columns is None:
+            return columns[features]
     
     def __open_models_json(self , model_name):
         if model_name in list(self.current_models.keys()):
