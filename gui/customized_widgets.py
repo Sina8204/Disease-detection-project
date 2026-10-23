@@ -52,6 +52,16 @@ class multi_tab(QTabWidget):
         else:
             print("You can't close the last tab.")
 
+    def slot_multi_screening(self):
+        if hasattr(self.currentWidget() , "multi_screening"):
+            current_page = self.currentWidget()
+            current_page.multi_screening()
+
+    def slot_screening_everyone(self):
+        if hasattr(self.currentWidget() , "screening_everyone"):
+            current_page = self.currentWidget()
+            current_page.screening_everyone()
+
 class FilePicker(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
