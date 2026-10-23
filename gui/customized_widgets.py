@@ -14,7 +14,7 @@ from Disease_diagnosis_class import Disease_diagnosis as dd
 prediction_engine = dd()
 
 # ------------------------------------------------------------------
-# Worker برای اجرای Screening در پس‌زمینه (مدل ممکن است کند باشد)
+# Worker for running screening in the background (the model might be slow)
 # ------------------------------------------------------------------
 class ScreeningWorker(QThread):
     finished_ok = pyqtSignal(object)
