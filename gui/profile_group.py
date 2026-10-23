@@ -1,13 +1,15 @@
 import pandas as pd
-from PyQt5.QtWidgets import (QWidget , QPushButton , QLabel ,
-                            QVBoxLayout, QHBoxLayout , QSizePolicy ,
-                            QGroupBox , QComboBox , QMessageBox ,
-                            QDialog )
-
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import (QWidget , QPushButton , QCheckBox ,
+                            QLabel , QVBoxLayout, QHBoxLayout , 
+                            QGroupBox , QComboBox , QSizePolicy ,
+                            QDialog , QMessageBox , QToolButton)
+from PyQt5.QtCore import QRect
 if __name__ == "__main__":
     from customized_widgets import DataFrameTableWidget , prediction_engine , ScreeningWorker
 else :
-    from customized_widgets import DataFrameTableWidget , prediction_engine , ScreeningWorker
+    from .customized_widgets import DataFrameTableWidget , prediction_engine , ScreeningWorker
 
 class win_person_features(QDialog):
     def __init__(self, features : pd.DataFrame , save_edited_data , parent=None):
@@ -31,20 +33,40 @@ class persons_profile(QWidget):
         self.person_features = features
         self.widget_group = QGroupBox("انتخاب بیماری")
         lay = QHBoxLayout(self.widget_group)
-        lay.addWidget(QLabel("مدل تشخیصی:"))
+
+        self.chbox_selected_profile = QCheckBox()
+        self.chbox_selected_profile.setGeometry(QRect(170, 120, 81, 20))
+        # self.chbox_selected_profile.stateChanged.connect(lambda : print(self.chbox_selected_profile.isChecked()))
+        lay.addWidget(self.chbox_selected_profile)
+
+        lay.addWidget(QLabel("Model : "))
+
         self.disease_combo = QComboBox()
         self.disease_combo.setMinimumWidth(280)
         self.disease_combo_update_items()
         self.disease_combo.currentTextChanged.connect(self.load_new_columns)
         lay.addWidget(self.disease_combo)
-        self.btn_screening = QPushButton("Screening")
+        
+        self.btn_screening = QToolButton() #QPushButton("Screening")
+        self.btn_screening.setIcon(QIcon("assets/one_predict.png"))
+        self.btn_screening.setIconSize(QSize(64, 64))
+
+        # Remove button border and background
+        self.btn_screening.setStyleSheet("QToolButton { border: none; background: transparent; }")
+
+        # Only the icon should be displayed (text hidden)
+        self.btn_screening.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.btn_screening.setToolTip("Start screening")
         self.btn_screening.clicked.connect(self.Disease_prediction)
         lay.addWidget(self.btn_screening)
+        
         lay.addStretch()
+        
         self.btn_info = QPushButton("اطلاعات فرد")
         self.btn_info.setObjectName("secondary")
         self.btn_info.clicked.connect(self.open_person_profile)
         lay.addWidget(self.btn_info)
+        
         main_lay = QVBoxLayout(self)
         main_lay.addWidget(self.widget_group)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
@@ -77,7 +99,10 @@ class persons_profile(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
             return []
-
+    
+    @property
+    def select_status(self):
+        return self.chbox_selected_profile.isChecked()
 
     def disease_combo_update_items(self):
         models = self.models_name
