@@ -79,3 +79,21 @@ class ScrollBox(QWidget):
             w = item.widget()
             if w is not None:
                 w.deleteLater()
+
+    @property
+    def get_items(self):
+        profiles = self.scroll.widget()
+        widgets = []
+        if profiles:
+            # Getting the main widget layout
+            layout = profiles.layout()
+            
+            if layout:
+                # Looping through all items in the layout
+                for i in range(layout.count()):
+                    item = layout.itemAt(i)
+                    if item:
+                        widget = item.widget()
+                        if widget:
+                            widgets.append(widget)
+        return widgets
