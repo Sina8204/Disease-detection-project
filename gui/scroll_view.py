@@ -2,7 +2,7 @@ import pandas as pd
 from PyQt5.QtWidgets import (QWidget , QScrollArea , QPushButton ,
                             QVBoxLayout, QHBoxLayout)
 from PyQt5.QtCore import QEvent, QObject
-
+from .result_page import predict_result
 if __name__ == "__main__":
     from customized_widgets import import_files
     from profile_group import persons_profile
@@ -18,8 +18,9 @@ class WheelFilter(QObject):
         return super().eventFilter(obj, event)
 
 class ScrollBox(QWidget):
-    def __init__(self , parent = None):
+    def __init__(self , predict_box : predict_result , parent = None):
         super().__init__(parent)
+        self.predict_box = predict_box
         # --- Scroll view ---
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
@@ -62,7 +63,7 @@ class ScrollBox(QWidget):
             "ca": 1.0,
             "thal": 7.0
         }
-        prof = persons_profile(pd.DataFrame([list(sample_data.values())] , columns=list(sample_data.keys())))
+        prof = persons_profile(name = f"Person {self.count_items}", result_box = self.predict_box , features = pd.DataFrame([list(sample_data.values())] , columns=list(sample_data.keys())))
         self.content_layout.insertWidget(self.content_layout.count() - 1, prof)
 
     def remove_profile(self, widget):
@@ -79,7 +80,9 @@ class ScrollBox(QWidget):
             w = item.widget()
             if w is not None:
                 w.deleteLater()
-
+    @property
+    def count_items(self):
+        return len(self.scroll.findChildren(persons_profile)) + 1
     @property
     def get_items(self):
         profiles = self.scroll.widget()
