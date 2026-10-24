@@ -37,15 +37,15 @@ class persons_profile(QWidget):
         self.widget_group = QGroupBox("انتخاب بیماری")
         lay = QHBoxLayout(self.widget_group)
 
-        self.name_field = QLineEdit(name)
-        self.name_field.setPlaceholderText("Enter person name")
-        self.name_field.setToolTip("Person name")
-        lay.addWidget(self.name_field)
-
         self.chbox_selected_profile = QCheckBox()
         self.chbox_selected_profile.setGeometry(QRect(170, 120, 81, 20))
         # self.chbox_selected_profile.stateChanged.connect(lambda : print(self.chbox_selected_profile.isChecked()))
         lay.addWidget(self.chbox_selected_profile)
+        
+        self.name_field = QLineEdit(name)
+        self.name_field.setPlaceholderText("Enter person name")
+        self.name_field.setToolTip("Person name")
+        lay.addWidget(self.name_field)
 
         lay.addWidget(QLabel("Model : "))
 
