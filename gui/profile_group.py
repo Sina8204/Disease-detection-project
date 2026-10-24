@@ -4,8 +4,10 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import (QWidget , QPushButton , QCheckBox ,
                             QLabel , QVBoxLayout, QHBoxLayout , 
                             QGroupBox , QComboBox , QSizePolicy ,
-                            QDialog , QMessageBox , QToolButton)
+                            QDialog , QMessageBox , QToolButton ,
+                            QLineEdit)
 from PyQt5.QtCore import QRect
+from .result_page import predict_result
 if __name__ == "__main__":
     from customized_widgets import DataFrameTableWidget , prediction_engine , ScreeningWorker
 else :
@@ -28,11 +30,17 @@ class win_person_features(QDialog):
 
 
 class persons_profile(QWidget):
-    def __init__(self, features : pd.DataFrame , parent=None):
+    def __init__(self, name : str , features : pd.DataFrame , result_box : predict_result , parent=None):
         super().__init__(parent)
+        self.method_show_result = result_box
         self.person_features = features
         self.widget_group = QGroupBox("انتخاب بیماری")
         lay = QHBoxLayout(self.widget_group)
+
+        self.name_field = QLineEdit(name)
+        self.name_field.setPlaceholderText("Enter person name")
+        self.name_field.setToolTip("Person name")
+        lay.addWidget(self.name_field)
 
         self.chbox_selected_profile = QCheckBox()
         self.chbox_selected_profile.setGeometry(QRect(170, 120, 81, 20))
@@ -114,8 +122,13 @@ class persons_profile(QWidget):
             self.disease_combo.setCurrentIndex(0)
 
     def Disease_prediction(self):
-        self.worker = ScreeningWorker(self.disease_name, self.person_features_values)
-        self.worker.finished_ok.connect(lambda result: print(result[1]))
+        self.worker = ScreeningWorker(name=self.name_field.text() , disease_name = self.disease_name, data = self.person_features_values)
+        self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_tab(title=result["Name"] , data=self.result_data(result)))
         self.worker.finished_err.connect(lambda short, full: print(f"{short} : {full}"))
         self.worker.start()
+
+    def result_data(self , result : dict):
+        columns_list = list(result.keys())
+        row = list(result.values())
+        return pd.DataFrame([row] , columns=columns_list)
 
