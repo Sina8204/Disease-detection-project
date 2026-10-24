@@ -19,16 +19,59 @@ class ScreeningWorker(QThread):
     finished_ok = pyqtSignal(object)
     finished_err = pyqtSignal(str, str)  # (short_msg, full_traceback)
 
-    def __init__(self, disease_name: str, data: dict, parent=None):
+    def __init__(self, name : str , disease_name: str, data: dict, parent=None):
         super().__init__(parent)
+        self.name = name
         self.disease_name = disease_name
         self.data = data
 
     def run(self):
         try:
-            result = prediction_engine.Screening(self.disease_name, **self.data)
+            predict = prediction_engine.Screening(self.disease_name, **self.data)
+            result = {
+                "Name" : self.name ,
+                "Disease_name" : self.disease_name ,
+                "Result" : predict[0] ,
+                "Message" : predict[1]["msg"] ,
+                "Result value" : predict[1]["value"]
+            }
+            self.finished_ok.emit(result)
+        except ValueError as v :
+            result = {
+                "Name" : self.name ,
+                "Disease_name" : self.disease_name ,
+                "Result" : "Feature Error" ,
+                "Message" : f"There was a problem retrieving some features. {v}" ,
+                "Result value" : None
+            }
+            self.finished_ok.emit(result)
+        except NameError as n :
+            result = {
+                "Name" : self.name ,
+                "Disease_name" : self.disease_name ,
+                "Result" : "Disease_name Error" ,
+                "Message" : f"{self.name} is not supported.\n{n}" ,
+                "Result value" : None
+            }
+            self.finished_ok.emit(result)
+        except RuntimeError as r:
+            result = {
+                "Name" : self.name ,
+                "Disease_name" : self.disease_name ,
+                "Result" : None ,
+                "Message" : str(r),
+                "Result value" : None
+            }
             self.finished_ok.emit(result)
         except Exception as e:
+            result = {
+                "Name" : self.name ,
+                "Disease_name" : self.disease_name ,
+                "Result" : "Unknown error" ,
+                "Message" : str(e),
+                "Result value" : None
+            }
+            self.finished_ok.emit(result)
             self.finished_err.emit(str(e), traceback.format_exc())
 
 class multi_tab(QTabWidget):
