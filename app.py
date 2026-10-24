@@ -3,11 +3,12 @@ from Disease_diagnosis_class import Disease_diagnosis as dd
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox ,
+from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox , QSplitter ,
                             QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QScrollArea , QToolBar , QAction)
 from gui.styles import STYLESHEET
 from gui.customized_widgets import multi_tab
 from gui.scroll_view import ScrollBox
+from gui.result_page import predict_result
 from typing import List
 class tabs_page(QWidget):
     def __init__(self, parent = None):
@@ -36,25 +37,6 @@ class tabs_page(QWidget):
                 prof.Disease_prediction()
                 print("########################")
         
-        # self.refresh_models()
-
-    # def refresh_models(self):
-    #     self.disease_combo.blockSignals(True)
-    #     self.disease_combo.clear()
-    #     try:
-    #         models = list(self.disease_dia.current_models.keys())
-    #         print(models)
-    #     except Exception as e:
-    #         QMessageBox.critical(self, "خطا", f"بارگذاری مدل‌ها ناموفق بود:\n{e}")
-    #         models = []
-    #     self.disease_combo.addItems(models)
-    #     self.disease_combo.blockSignals(False)
-    #     if models:
-    #         self.disease_combo.setCurrentIndex(0)
-    #         self._load_features(models[0])
-    
-    # def _load_features(self, disease_name: str):
-    #     print(f"Changed to {disease_name}")
 
 class actions:
     def __init__(self , tabs : multi_tab): #scroll_view : ScrollBox
@@ -65,6 +47,19 @@ class actions:
         self.screening_evryone = QAction(QIcon("assets/predict_all.png") , "Screening evryone")
         self.screening_evryone.triggered.connect(tabs.slot_screening_everyone)
 
+class Panel(QWidget):
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.splitter = QSplitter(Qt.Vertical) # Qt.Horizontal
+        self.tabs = multi_tab()
+        self.result_box = predict_result()
+        self.tabs.add_new_tab(title = "New screening" , page=tabs_page())
+        
+        self.splitter.addWidget(self.tabs)
+        self.splitter.addWidget(self.result_box)
+        self.splitter.setSizes([600, 200])
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.splitter)
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -72,8 +67,8 @@ class MainWindow(QMainWindow):
         self.resize(1080, 780)
         self.setStyleSheet(STYLESHEET)
         self.central = QWidget()
-        self.tabs = multi_tab()
-        self.act = actions(self.tabs)
+        self.panels = Panel()
+        self.act = actions(self.panels.tabs)
 
         # ------------------- Tool bar -------------------
         self.toolBar_screening = QToolBar()
@@ -94,9 +89,7 @@ class MainWindow(QMainWindow):
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        # self.tabs = multi_tab()
-        self.tabs.add_new_tab(title = "New screening" , page=tabs_page())
-        layout.addWidget(self.tabs)
+        layout.addWidget(self.panels)
 
         self.setCentralWidget(self.central)
 
