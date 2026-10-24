@@ -204,13 +204,13 @@ class Disease_diagnosis:
         return uniq_name
 
 
-    def show_result(self , msg):
-        print(msg)
+    # def show_result(self , msg):
+    #     print(msg)
     
     def __show_result(self , results , result):
         for target in results:
             if result[0] != target["value"] : continue
-            self.show_result(target["msg"])
+            # self.show_result(target["msg"])
             return [target["output"] , target]
         raise RuntimeError(f"The model has made an unexpected prediction : '{result}'")
 
