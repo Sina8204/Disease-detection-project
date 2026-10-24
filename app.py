@@ -10,9 +10,11 @@ from gui.customized_widgets import multi_tab
 from gui.scroll_view import ScrollBox
 from gui.result_page import predict_result
 from typing import List
+
 class tabs_page(QWidget):
-    def __init__(self, parent = None):
+    def __init__(self, predict_box : predict_result , parent = None):
         super().__init__(parent)
+        self.predict_box = predict_box
         self.disease_dia = dd()
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 16, 16, 16)
@@ -20,7 +22,7 @@ class tabs_page(QWidget):
 
         self.scroll_group = QGroupBox("اطلاعات فرد/افراد")
         scroll_group_lay = QVBoxLayout(self.scroll_group)
-        self.scroller = ScrollBox()
+        self.scroller = ScrollBox(predict_box = self.predict_box)
         scroll_group_lay.addWidget(self.scroller)
         root.addWidget(self.scroll_group, 1)
 
@@ -53,7 +55,7 @@ class Panel(QWidget):
         self.splitter = QSplitter(Qt.Vertical) # Qt.Horizontal
         self.tabs = multi_tab()
         self.result_box = predict_result()
-        self.tabs.add_new_tab(title = "New screening" , page=tabs_page())
+        self.tabs.add_new_tab(title = "New screening" , page=tabs_page(predict_box = self.result_box))
         
         self.splitter.addWidget(self.tabs)
         self.splitter.addWidget(self.result_box)
