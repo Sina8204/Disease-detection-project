@@ -169,7 +169,7 @@ class DataFrameTableWidget(QWidget):
 
         # --- Top toolbar ---
         toolbar = QHBoxLayout()
-        self.btn_save_excel = QPushButton("ذخیره در Excel")
+        self.btn_save_excel = QPushButton("ذخیره")
         self.btn_reload = QPushButton("بازنشانی از دیتای اولیه")
         self.btn_save_excel.clicked.connect(self.func_save_edited_data) #self._save_to_excel
         self.btn_reload.clicked.connect(self._reload_original)
