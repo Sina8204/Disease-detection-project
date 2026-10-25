@@ -42,9 +42,19 @@ class predict_result(QWidget):
         self.action_save.setShortcut(QKeySequence("Ctrl+A"))  # یا به سادگی "Ctrl+A"
         self.action_save.triggered.connect(self.save_current_result)
         self.addAction(self.action_save)
+
+    def add_empty_tabe(self , name = ""):
+        self.add_new_tab(title = name , data = df([] , columns=["Name" , "Disease_name" , "Result" , "Message" , "Result value"]))
+    
     def add_new_tab(self , data : df , title : str):
         self.tabs.add_new_tab(title = title , page=result_table(data , save_edited_data=lambda : print("YEs")))
 
+    def add_new_row(self , values : list):
+        if hasattr(self.tabs.currentWidget() , "add_row"):
+            print("I am adding new row")
+            current_table = self.tabs.currentWidget()
+            current_table.add_row(values)
+        
     def save_current_result(self):
         if hasattr(self.tabs.currentWidget() , "get_dataframe"):
             self.save()
