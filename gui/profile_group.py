@@ -65,7 +65,7 @@ class persons_profile(QWidget):
         # Only the icon should be displayed (text hidden)
         self.btn_screening.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.btn_screening.setToolTip("Start screening")
-        self.btn_screening.clicked.connect(self.Disease_prediction)
+        self.btn_screening.clicked.connect(lambda : self.Disease_prediction())
         lay.addWidget(self.btn_screening)
         
         lay.addStretch()
@@ -121,9 +121,12 @@ class persons_profile(QWidget):
         if models:
             self.disease_combo.setCurrentIndex(0)
 
-    def Disease_prediction(self):
+    def Disease_prediction(self , add_new_tabe = True):
         self.worker = ScreeningWorker(name=self.name_field.text() , disease_name = self.disease_name, data = self.person_features_values)
-        self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_tab(title=result["Name"] , data=self.result_data(result)))
+        if add_new_tabe:
+            self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_tab(title=result["Name"] , data=self.result_data(result)))
+        else :
+            self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_row(values = list(result.values())))
         self.worker.finished_err.connect(lambda short, full: print(f"{short} : {full}"))
         self.worker.start()
 
