@@ -233,6 +233,58 @@ class DataFrameTableWidget(QWidget):
 
         self.table.setItem(row, col, item)
 
+    def add_row(self, values=None):
+        """
+        Adds a new row to the end of the table. The row label will be the row number (0, 1, 2, ...).
+        Parameters:
+        values: A list of values for the columns. If None, all will be empty. The length of the list should match the number of columns.
+        Returns:
+        The new row number in the table (int)
+        """
+        n_cols = self.table.columnCount()
+
+        # --- Preparing values ---
+        if values is None:
+            values = [""] * n_cols
+        elif len(values) != n_cols:
+            raise ValueError(
+                f"The number of values ({len(values)}) doesn't match the number of columns ({n_cols})."
+            )
+
+        # --- Adding a row in QTableWidget ---
+        new_row = self.table.rowCount()
+        self.table.insertRow(new_row)
+
+        # We don't give any item to the 'vertical header'; 'Qt' shows the numbers itself. 
+        # (We don't call 'setVerticalHeaderItem' or we give 'None')
+        for c, val in enumerate(values):
+            self._set_item(new_row, c, self._coerce_value(val))
+
+        # --- Syncing the internal DataFrame ---
+        self.sync_to_df()
+
+        # --- Scroll and select a new row ---
+        self.table.scrollToBottom()
+        self.table.selectRow(new_row)
+
+        return new_row
+
+    @staticmethod
+    def _coerce_value(val):
+        """It converts numeric strings into numbers so they are displayed right-aligned."""
+        if val is None or val == "":
+            return np.nan
+        if isinstance(val, (int, float, np.integer, np.floating)):
+            return val
+        if isinstance(val, str):
+            try:
+                # Only convert if it's completely numeric
+                f = float(val)
+                return int(f) if f.is_integer() else f
+            except ValueError:
+                return val
+        return val
+
     # -------------------------------------------------- Read from table
     def get_dataframe(self) -> pd.DataFrame:
         """
@@ -252,8 +304,8 @@ class DataFrameTableWidget(QWidget):
             data,
             columns=[self.table.horizontalHeaderItem(c).text()
                     for c in range(cols)],
-            index=[self.table.verticalHeaderItem(r).text()
-                for r in range(rows)]
+            # index=[self._get_row_index(r) for r in range(rows)]
+            # index=[r for r in range(rows)]
         )
 
         # --- Trying to restore the numeric type of each column ---
@@ -268,6 +320,10 @@ class DataFrameTableWidget(QWidget):
                 new_df[col] = new_df[col].replace({"": np.nan})
 
         return new_df
+
+    def _get_row_index(self, r):
+        item = self.table.verticalHeaderItem(r)
+        return item.text() if item is not None else str(r)
 
     # -------------------------------------------------------------- Actions
     def _save_to_excel(self):
