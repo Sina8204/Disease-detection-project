@@ -27,18 +27,19 @@ class tabs_page(QWidget):
         root.addWidget(self.scroll_group, 1)
 
     def multi_screening(self):
+        self.predict_box.add_empty_tabe(name = "test1")
         for prof in self.scroller.get_items:
             if prof.select_status:
                 if hasattr(prof , "Disease_prediction"):
-                    prof.Disease_prediction()
+                    prof.Disease_prediction(add_new_tabe = False)
                     print("########################")
-
+    
     def screening_everyone(self):
+        self.predict_box.add_empty_tabe(name = "test2")
         for prof in self.scroller.get_items:
             if hasattr(prof , "Disease_prediction"):
-                prof.Disease_prediction()
-                print("########################")
-        
+                prof.Disease_prediction(add_new_tabe = False)
+            print("########################")
 
 class actions:
     def __init__(self , tabs : multi_tab): #scroll_view : ScrollBox
