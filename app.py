@@ -1,7 +1,7 @@
 from Disease_diagnosis_class import Disease_diagnosis as dd
 
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt , QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication,QMainWindow , QWidget, QPushButton , QMessageBox , QSplitter ,
                             QLabel, QVBoxLayout , QHBoxLayout , QGroupBox , QScrollArea , QToolBar , QAction)
@@ -12,7 +12,7 @@ from gui.result_page import predict_result
 from typing import List
 
 class tabs_page(QWidget):
-    def __init__(self, predict_box : predict_result , parent = None):
+    def __init__(self, predict_box: predict_result, parent=None):
         super().__init__(parent)
         self.predict_box = predict_box
         self.disease_dia = dd()
@@ -22,24 +22,68 @@ class tabs_page(QWidget):
 
         self.scroll_group = QGroupBox("اطلاعات فرد/افراد")
         scroll_group_lay = QVBoxLayout(self.scroll_group)
-        self.scroller = ScrollBox(predict_box = self.predict_box)
+        self.scroller = ScrollBox(predict_box=self.predict_box)
         scroll_group_lay.addWidget(self.scroller)
         root.addWidget(self.scroll_group, 1)
 
+        # Queue of profiles to be screened
+        self._screening_queue: List = []
+        self._is_screening = False
+
+    def _start_screening(self, profiles: List, tab_name: str):
+        if self._is_screening:
+            print("Screening is already running. Please wait...")
+            return
+
+        self.predict_box.add_empty_tabe(name=tab_name)
+
+        self._screening_queue = [
+            prof for prof in profiles
+            if hasattr(prof, "Disease_prediction")
+        ]
+
+        if not self._screening_queue:
+            print("No profiles to screen.")
+            return
+
+        self._is_screening = True
+        self._run_next_in_queue()
+
+
     def multi_screening(self):
-        self.predict_box.add_empty_tabe(name = "test1")
-        for prof in self.scroller.get_items:
-            if prof.select_status:
-                if hasattr(prof , "Disease_prediction"):
-                    prof.Disease_prediction(add_new_tabe = False)
-                    print("########################")
-    
+        selected = [p for p in self.scroller.get_items if p.select_status]
+        self._start_screening(selected, tab_name="test1")
+
+
     def screening_everyone(self):
-        self.predict_box.add_empty_tabe(name = "test2")
-        for prof in self.scroller.get_items:
-            if hasattr(prof , "Disease_prediction"):
-                prof.Disease_prediction(add_new_tabe = False)
-            print("########################")
+        self._start_screening(list(self.scroller.get_items), tab_name="test2")
+
+    def _run_next_in_queue(self):
+        """Start predicting the next profile in the queue; or stop."""
+        if not self._screening_queue:
+            self._is_screening = False
+            print("Screening of all profiles finished.")
+            return
+
+        prof = self._screening_queue.pop(0)
+
+        def on_worker_finished(p=prof):
+            # Ensuring that QThread is cleared
+            try:
+                if hasattr(p, "worker") and p.worker is not None:
+                    p.worker.deleteLater()
+                    p.worker = None
+            except Exception as e:
+                print(f"Error cleaning worker: {e}")
+            # In the main event loop, start the next person.
+            QTimer.singleShot(0, self._run_next_in_queue)
+
+        try:
+            prof.Disease_prediction(add_new_tabe=False, on_finished=on_worker_finished)
+        except Exception as e:
+            print(f"Failed to start screening for a profile: {e}")
+            # Even if you make a mistake, go to the next person.
+            QTimer.singleShot(0, self._run_next_in_queue)
 
 class actions:
     def __init__(self , tabs : multi_tab): #scroll_view : ScrollBox

@@ -121,14 +121,30 @@ class persons_profile(QWidget):
         if models:
             self.disease_combo.setCurrentIndex(0)
 
-    def Disease_prediction(self , add_new_tabe = True):
-        self.worker = ScreeningWorker(name=self.name_field.text() , disease_name = self.disease_name, data = self.person_features_values)
+    def Disease_prediction(self, add_new_tabe=True, on_finished=None):
+        self.worker = ScreeningWorker(
+            name=self.name_field.text(),
+            disease_name=self.disease_name,
+            data=self.person_features_values
+        )
         if add_new_tabe:
-            self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_tab(title=result["Name"] , data=self.result_data(result)))
-        else :
-            self.worker.finished_ok.connect(lambda result : self.method_show_result.add_new_row(values = list(result.values())))
+            self.worker.finished_ok.connect(
+                lambda result: self.method_show_result.add_new_tab(
+                    title=result["Name"], data=self.result_data(result)
+                )
+            )
+        else:
+            self.worker.finished_ok.connect(
+                lambda result: self.method_show_result.add_new_row(values=list(result.values()))
+            )
         self.worker.finished_err.connect(lambda short, full: print(f"{short} : {full}"))
+
+        # Optional callback connection to notify when the task is finished (even if there is an error)
+        if on_finished is not None:
+            self.worker.finished.connect(on_finished)  # QThread.finished is always emitted
+
         self.worker.start()
+        return self.worker
 
     def result_data(self , result : dict):
         columns_list = list(result.keys())
