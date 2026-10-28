@@ -1,4 +1,5 @@
-import json , traceback
+import json , traceback , os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from PyQt5.QtWidgets import (QTabWidget, QWidget , QFileDialog ,
@@ -6,9 +7,13 @@ from PyQt5.QtWidgets import (QTabWidget, QWidget , QFileDialog ,
                             QVBoxLayout, QHBoxLayout , QHeaderView ,
                             QMessageBox , QTableWidget , QAbstractItemView , 
                             QTableWidgetItem)
-from PyQt5.QtCore import Qt , pyqtSignal , QThread
+from PyQt5.QtCore import Qt , pyqtSignal , QThread , QTimer
 from PyQt5.QtGui import QColor, QBrush
 from Disease_diagnosis_class import Disease_diagnosis as dd
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .scroll_view import ScrollBox
 
 prediction_engine = dd()
 
@@ -74,6 +79,22 @@ class ScreeningWorker(QThread):
             self.finished_ok.emit(result)
             self.finished_err.emit(str(e), traceback.format_exc())
 
+class FileLoadWorker(QThread):
+    """Reads a file in the background and returns a DataFrame."""
+    loaded = pyqtSignal(object)          # DataFrame or None
+    failed = pyqtSignal(str, str)        # (path, error_msg)
+
+    def __init__(self, path: str, loader, parent=None):
+        super().__init__(parent)
+        self.path = path
+        self._loader = loader  # Load function/method
+    
+    def run(self):
+        try:
+            df = self._loader(self.path)
+            self.loaded.emit(df)
+        except Exception as e:
+            self.failed.emit(self.path, str(e))
 class multi_tab(QTabWidget):
     def __init__(self):
         super().__init__()
@@ -106,11 +127,14 @@ class multi_tab(QTabWidget):
             current_page.screening_everyone()
 
 class FilePicker(QWidget):
-    def __init__(self, parent = None):
+    ALLOWED_EXTENSIONS = {".json", ".xlsx", ".csv"}
+    import_finished = pyqtSignal()        
+
+    def __init__(self, scroll_view: "ScrollBox", parent=None):
         super().__init__(parent)
+        self.scroll_view = scroll_view
         layout = QVBoxLayout(self)
 
-        # User guid flag
         self.label = QLabel("فایل‌ها را اینجا رها کنید (Drag & Drop)")
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setStyleSheet("border: 2px dashed #aaa; padding: 20px; font-size: 14px;")
@@ -122,30 +146,121 @@ class FilePicker(QWidget):
 
         self.setAcceptDrops(True)
 
+        # --- Queues ---
+        self._files_queue: list[str] = []
+        self._profile_queue: list[tuple[str, pd.DataFrame]] = []
+        self._is_importing = False
+        self._current_file_worker: "FileLoadWorker | None" = None
+
     # --- Drag & drop ---
     def dragEnterEvent(self, event):
-        # Checking whether the entered data contains a URL (file) or not
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             event.ignore()
 
     def dropEvent(self, event):
-        # Extracting the path of dropped files and printing them
-        for url in event.mimeData().urls():
-            file_path = url.toLocalFile()
-            print(f"فایل رها شده: {file_path}")
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        self._start_import(files)
         event.acceptProposedAction()
 
-    # --- Select files by button ---
     def open_file_dialog(self):
-        # Open the multi-file selection dialog
         files, _ = QFileDialog.getOpenFileNames(self, "انتخاب فایل‌ها")
-        if files:
-            for file_path in files:
-                print(f"فایل انتخاب شده: {file_path}")
-        else:
+        if not files:
             print("هیچ فایلی انتخاب نشد.")
+            return
+        self._start_import(files)
+
+    # ------------------------------------------------------------ Main queue
+    def _start_import(self, files: list[str]):
+        if self._is_importing:
+            print("Import already running. Please wait...")
+            return
+
+        valid_files = []
+        for path in files:
+            p = Path(path)
+            if not p.is_file():
+                print(f"File not found: {path}")
+                continue
+            ext = p.suffix.lower()
+            if ext not in self.ALLOWED_EXTENSIONS:
+                print(f"Unsupported file type: '{ext}' for {path}")
+                continue
+            valid_files.append(path)
+
+        if not valid_files:
+            return
+
+        self._is_importing = True
+        self._files_queue = list(valid_files)
+        self._load_next_file()
+
+    def _load_next_file(self):
+        if not self._files_queue:
+            self._build_next_profile()
+            return
+
+        path = self._files_queue.pop(0)
+        ext = Path(path).suffix.lower()
+        loader = {".csv": self._load_csv, ".xlsx": self._load_xlsx, ".json": self._load_json}[ext]
+
+        worker = FileLoadWorker(path, loader, parent=self)
+        self._current_file_worker = worker
+
+        def on_loaded(df):
+            try:
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    for record in df.to_dict(orient="records"):
+                        one_row = pd.DataFrame([list(record.values())], columns=list(record.keys()))
+                        name = f"Person {self.scroll_view.count_items + len(self._profile_queue)}"
+                        self._profile_queue.append((name, one_row))
+            except Exception as e:
+                print(f"Error processing {path}: {e}")
+            worker.deleteLater()
+            self._current_file_worker = None
+            QTimer.singleShot(0, self._load_next_file)
+
+        def on_failed(p, msg):
+            print(f"Failed to load '{p}': {msg}")
+            worker.deleteLater()
+            self._current_file_worker = None
+            QTimer.singleShot(0, self._load_next_file)
+
+        worker.loaded.connect(on_loaded)
+        worker.failed.connect(on_failed)
+        worker.start()
+
+    def _build_next_profile(self):
+        if not self._profile_queue:
+            self._is_importing = False
+            print("All profiles imported.")
+            self.import_finished.emit()
+            return
+
+        name, one_row = self._profile_queue.pop(0)
+        try:
+            self.scroll_view.add_profile(one_row, name=name)
+        except Exception as e:
+            print(f"Failed to add profile '{name}': {e}")
+
+        QTimer.singleShot(0, self._build_next_profile)
+
+    # ------------------------------------------------------------ Loaders
+    def _load_csv(self, p):
+        return pd.read_csv(p)
+
+    def _load_xlsx(self, p):
+        return pd.read_excel(p)
+
+    def _load_json(self, p):
+        with open(p, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return pd.DataFrame(data)
+        elif isinstance(data, dict):
+            return pd.DataFrame([data])
+        return pd.DataFrame()
 
 class DataFrameTableWidget(QWidget):
     """
@@ -348,12 +463,13 @@ class DataFrameTableWidget(QWidget):
         self._df = self.get_dataframe()
 
 class import_files(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, scroll_view: "ScrollBox", parent=None):
         super().__init__(parent)
         self.setWindowTitle("افزودن اطلاعات افراد")
         self.resize(500, 400)
 
-        self.file_picker = FilePicker()
+        self.file_picker = FilePicker(scroll_view)
+        self.file_picker.import_finished.connect(self.accept) 
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.file_picker)
