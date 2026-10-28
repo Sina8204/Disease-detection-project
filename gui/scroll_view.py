@@ -1,13 +1,11 @@
 import pandas as pd
 from PyQt5.QtWidgets import (QWidget , QScrollArea , QPushButton ,
                             QVBoxLayout, QHBoxLayout)
-from PyQt5.QtCore import QEvent, QObject
+from PyQt5.QtCore import QEvent, QObject , QTimer
 from .result_page import predict_result
 if __name__ == "__main__":
-    from customized_widgets import import_files
     from profile_group import persons_profile
 else :
-    from .customized_widgets import import_files
     from .profile_group import persons_profile
 
 class WheelFilter(QObject):
@@ -47,30 +45,29 @@ class ScrollBox(QWidget):
         self.wheel_filter = WheelFilter(self)
         self.scroll.viewport().installEventFilter(self.wheel_filter)
 
-    def add_profile(self):
-        sample_data = {
-            "age": 63,
-            "sex": 1,
-            "cp": 4,
-            "trestbps": 130,
-            "chol": 254,
-            "fbs": 0,
-            "restecg": 2,
-            "thalach": 147,
-            "exang": 0,
-            "oldpeak": 1.4,
-            "slope": 2,
-            "ca": 1.0,
-            "thal": 7.0
-        }
-        prof = persons_profile(name = f"Person {self.count_items}", result_box = self.predict_box , features = pd.DataFrame([list(sample_data.values())] , columns=list(sample_data.keys())))
+    def add_profile(self, person_data: pd.DataFrame, name: str | None = None):
+        if name is None:
+            name = f"Person {self.count_items}"
+        prof = persons_profile(
+            name=name,
+            result_box=self.predict_box,
+            features=person_data,
+        )
         self.content_layout.insertWidget(self.content_layout.count() - 1, prof)
+        QTimer.singleShot(50, self._scroll_to_bottom)
 
+    def _scroll_to_bottom(self):
+        sb = self.scroll.verticalScrollBar()
+        sb.setValue(sb.maximum())
     def remove_profile(self, widget):
         self.content_layout.removeWidget(widget)
         widget.deleteLater()
 
     def open_win_import_files(self):
+        if __name__ == "__main__":
+            from customized_widgets import import_files
+        else :
+            from .customized_widgets import import_files
         self.win_import_files = import_files(self)
         self.win_import_files.show()
     
