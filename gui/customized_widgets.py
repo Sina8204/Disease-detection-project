@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QTabWidget, QWidget , QFileDialog ,
                             QPushButton , QLabel , QDialog ,
                             QVBoxLayout, QHBoxLayout , QHeaderView ,
                             QMessageBox , QTableWidget , QAbstractItemView , 
-                            QTableWidgetItem)
+                            QTableWidgetItem , QLineEdit , QGroupBox)
 from PyQt5.QtCore import Qt , pyqtSignal , QThread , QTimer
 from PyQt5.QtGui import QColor, QBrush
 from Disease_diagnosis_class import Disease_diagnosis as dd
@@ -126,6 +126,46 @@ class multi_tab(QTabWidget):
             current_page = self.currentWidget()
             current_page.screening_everyone()
 
+class names_widget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.widget_group = QGroupBox(self)
+        main_layout = QVBoxLayout(self.widget_group)
+        self.default_name = "__name__"
+        self.default_disease = "__disease__"
+
+        name_widgets_layout = QHBoxLayout()
+        self.name_lable = QLabel("Name column : ")
+        self.name_field = QLineEdit(self.default_name)
+        name_widgets_layout.addWidget(self.name_lable)
+        name_widgets_layout.addWidget(self.name_field)
+        
+        disease_widgets_layout = QHBoxLayout()
+        self.disease_lable = QLabel("Disease column : ")
+        self.disease_field = QLineEdit(self.default_disease)
+        disease_widgets_layout.addWidget(self.disease_lable)
+        disease_widgets_layout.addWidget(self.disease_field)
+
+        # test_btn = QPushButton("test")
+        # test_btn.clicked.connect(lambda : print(self.get_names))
+        
+        main_layout.addLayout(name_widgets_layout)
+        main_layout.addLayout(disease_widgets_layout)
+        # main_layout.addWidget(test_btn)
+
+        main_lay = QVBoxLayout(self)
+        main_lay.addWidget(self.widget_group)
+
+    @property
+    def get_names(self):
+        name = self.name_field.text().strip()
+        name = name if name else self.default_name
+
+        disease = self.disease_field.text().strip()
+        disease = disease if disease else self.default_disease
+
+        return {"name" : name , "disease" : disease}
+
 class FilePicker(QWidget):
     ALLOWED_EXTENSIONS = {".json", ".xlsx", ".csv"}
     import_finished = pyqtSignal()
@@ -134,6 +174,10 @@ class FilePicker(QWidget):
         super().__init__(parent)
         self.scroll_view = scroll_view
         layout = QVBoxLayout(self)
+
+        self.names_field_widgets = names_widget()
+
+        layout.addWidget(self.names_field_widgets)
 
         self.label = QLabel("فایل‌ها را اینجا رها کنید (Drag & Drop)")
         self.label.setAlignment(Qt.AlignCenter)
