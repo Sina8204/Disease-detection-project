@@ -45,11 +45,12 @@ class ScrollBox(QWidget):
         self.wheel_filter = WheelFilter(self)
         self.scroll.viewport().installEventFilter(self.wheel_filter)
 
-    def add_profile(self, person_data: pd.DataFrame, name: str | None = None):
+    def add_profile(self, person_data: pd.DataFrame, name: str | None = None , disease : str | None = None):
         if name is None:
             name = f"Person {self.count_items}"
         prof = persons_profile(
-            name=name,
+            name = name,
+            disease = disease ,
             result_box=self.predict_box,
             features=person_data,
         )
