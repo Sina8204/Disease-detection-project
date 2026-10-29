@@ -159,6 +159,7 @@ class names_widget(QWidget):
         outer_layout.addWidget(self.widget_group)
 
         # Preventing vertical stretching and the consumption of extra space        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         self.widget_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
     @property
@@ -169,7 +170,7 @@ class names_widget(QWidget):
         disease = self.disease_field.text().strip()
         disease = disease if disease else self.default_disease
 
-        return {"name": name, "disease": disease}
+        return {"name_key" : name , "disease_key" : disease}
 
 class FilePicker(QWidget):
     ALLOWED_EXTENSIONS = {".json", ".xlsx", ".csv"}
@@ -266,7 +267,8 @@ class FilePicker(QWidget):
                 if isinstance(df, pd.DataFrame) and not df.empty:
                     for record in df.to_dict(orient="records"):
                         one_row = pd.DataFrame([list(record.values())], columns=list(record.keys()))
-                        person_info = self.get_person_info(info=one_row)
+                        
+                        person_info = self.get_person_info(info=one_row , **self.names_field_widgets.get_names)
                         # name = self.default_name
                         # self._profile_queue.append((name, one_row))
                         self._profile_queue.append(person_info)
