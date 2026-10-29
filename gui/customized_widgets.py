@@ -267,7 +267,6 @@ class FilePicker(QWidget):
                 if isinstance(df, pd.DataFrame) and not df.empty:
                     for record in df.to_dict(orient="records"):
                         one_row = pd.DataFrame([list(record.values())], columns=list(record.keys()))
-                        
                         person_info = self.get_person_info(info=one_row , **self.names_field_widgets.get_names)
                         # name = self.default_name
                         # self._profile_queue.append((name, one_row))
