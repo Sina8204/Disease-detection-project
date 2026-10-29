@@ -128,7 +128,7 @@ class multi_tab(QTabWidget):
 
 class FilePicker(QWidget):
     ALLOWED_EXTENSIONS = {".json", ".xlsx", ".csv"}
-    import_finished = pyqtSignal()        
+    import_finished = pyqtSignal()
 
     def __init__(self, scroll_view: "ScrollBox", parent=None):
         super().__init__(parent)
@@ -196,10 +196,14 @@ class FilePicker(QWidget):
         self._files_queue = list(valid_files)
         self._load_next_file()
 
+    @property
+    def default_name(self):
+        return f"Person {self.scroll_view.count_items + len(self._profile_queue)}"
+    
     def _load_next_file(self):
         if not self._files_queue:
             self._build_next_profile()
-            return
+            return f"Person {self.scroll_view.count_items + len(self._profile_queue)}"
 
         path = self._files_queue.pop(0)
         ext = Path(path).suffix.lower()
@@ -213,8 +217,10 @@ class FilePicker(QWidget):
                 if isinstance(df, pd.DataFrame) and not df.empty:
                     for record in df.to_dict(orient="records"):
                         one_row = pd.DataFrame([list(record.values())], columns=list(record.keys()))
-                        name = f"Person {self.scroll_view.count_items + len(self._profile_queue)}"
-                        self._profile_queue.append((name, one_row))
+                        person_info = self.get_person_info(info=one_row)
+                        # name = self.default_name
+                        # self._profile_queue.append((name, one_row))
+                        self._profile_queue.append(person_info)
             except Exception as e:
                 print(f"Error processing {path}: {e}")
             worker.deleteLater()
@@ -230,6 +236,15 @@ class FilePicker(QWidget):
         worker.loaded.connect(on_loaded)
         worker.failed.connect(on_failed)
         worker.start()
+    
+    def get_person_info(self , info : pd.DataFrame , name_key = "__name__" , disease_key = "__disease__"):
+        name = info[name_key][0] if name_key in info.columns else None
+        disease = info[disease_key][0] if disease_key in info.columns else None
+        if name_key in info.columns:
+            info.drop(name_key, axis=1, inplace=True)
+        if disease_key in info.columns:
+            info.drop(disease_key, axis=1, inplace=True)
+        return ({"name" : name , "disease" : disease} , info)
 
     def _build_next_profile(self):
         if not self._profile_queue:
@@ -238,9 +253,12 @@ class FilePicker(QWidget):
             self.import_finished.emit()
             return
 
-        name, one_row = self._profile_queue.pop(0)
+        person_info = self._profile_queue.pop(0)
+        name = person_info[0]['name']
+        disease = person_info[0]["disease"]
+        data = person_info[1]
         try:
-            self.scroll_view.add_profile(one_row, name=name)
+            self.scroll_view.add_profile(person_data = data , name = name , disease = disease)
         except Exception as e:
             print(f"Failed to add profile '{name}': {e}")
 
