@@ -30,10 +30,11 @@ class win_person_features(QDialog):
 
 
 class persons_profile(QWidget):
-    def __init__(self, name : str , features : pd.DataFrame , result_box : predict_result , parent=None):
+    def __init__(self, name : str , disease : str , features : pd.DataFrame , result_box : predict_result , parent=None):
         super().__init__(parent)
         self.method_show_result = result_box
         self.person_features = features
+        self.disease = disease
         self.widget_group = QGroupBox("انتخاب بیماری")
         lay = QHBoxLayout(self.widget_group)
 
@@ -118,7 +119,10 @@ class persons_profile(QWidget):
         self.disease_combo.clear()
         self.disease_combo.addItems(models)
         self.disease_combo.blockSignals(False)
-        if models:
+        find_text = self.disease_combo.findText(self.disease)
+        if find_text >= 0:
+            self.disease_combo.setCurrentIndex(find_text)
+        elif models:
             self.disease_combo.setCurrentIndex(0)
 
     def Disease_prediction(self, add_new_tabe=True, on_finished=None):
